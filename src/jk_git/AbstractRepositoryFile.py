@@ -23,17 +23,30 @@ class AbstractRepositoryFile(object):
 		"C": "conflicted",
 	}
 
-	def __init__(self, status:str, filePath:str):
-		self.status = status
-		self.filePath = filePath
+	def __init__(self, workingCopy, status:str, filePath:str):
+		self.__workingCopy = workingCopy
+		self.__status = status
+		self.__filePath = filePath
+	#
+
+	def filePath(self):
+		return self.__filePath
+	#
+
+	def status(self):
+		return self.__status
+	#
+
+	def workingCopy(self):
+		return self.__workingCopy
 	#
 
 	def __str__(self):
-		return self.__class__.__name__ + "< " + self.STATE_MAP[self.status] + " " + repr(self.filePath) + " >"
+		return self.__class__.__name__ + "<" + self.STATE_MAP[self.__status] + ": " + repr(self.__filePath) + ">"
 	#
 
 	def __repr__(self):
-		return self.__class__.__name__ + "< " + self.STATE_MAP[self.status] + " " + repr(self.filePath) + " >"
+		return self.__class__.__name__ + "<" + self.STATE_MAP[self.__status] + ": " + repr(self.__filePath) + ">"
 	#
 
 #

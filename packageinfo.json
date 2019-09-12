@@ -1,0 +1,49 @@
+{
+	"language": "python3",
+	"name": "jk_git",
+	"version": "0.2019.9.11",
+	"meta": {
+		"description": "This python module is a wrapper around git (= the git binary file). It is ment as a simple interface to basic git functionality.",
+		"keywords": [
+			"git"
+		],
+		"license": "Apache 2.0",
+		"development_status": "alpha",
+		"authors": [
+			{
+				"name": "Jürgen Knauth",
+				"email": "pubsrc@binary-overflow.de"
+			}
+		],
+		"wiki": {
+			"page": "DevDocs:jk_git"
+		}
+	},
+	"repositories": [
+		{
+			"type": "github",
+			"user": "jkpubsrc",
+			"project": "python-module-jk-git",
+			"devon_publish": false
+		},
+		{
+			"type": "pypy",
+			"devon_publish": false
+		}
+	],
+	"source": {
+		"packages": [
+			"jk_git"
+		],
+		"extra_data_files": [
+		]
+	},
+	"requirements": {
+		"python_packages": [
+			"jk_simpleexec"
+		],
+		"python_packages_dev": [
+		]
+	}
+}
+
