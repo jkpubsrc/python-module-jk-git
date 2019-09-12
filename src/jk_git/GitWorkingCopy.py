@@ -263,10 +263,9 @@ class GitWorkingCopy(object):
 			if not bSuccess:
 				raise Exception("Failed to parse line: " + repr(line))
 
-		if bIncludeIgnored:
-			return ret
-		else:
-			return [ x for x in ret if x.status() != GitFile.IGNORED ]
+		if not bIncludeIgnored:
+			ret = [ x for x in ret if x.status() != GitFile.IGNORED ]
+		return ret
 	#
 
 #
