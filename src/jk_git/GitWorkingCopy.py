@@ -266,7 +266,7 @@ class GitWorkingCopy(object):
 		if bIncludeIgnored:
 			return ret
 		else:
-			return [ x for x in ret if x.status != GitFile.IGNORED ]
+			return [ x for x in ret if x.status() != GitFile.IGNORED ]
 	#
 
 #
