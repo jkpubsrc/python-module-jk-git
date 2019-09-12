@@ -43,6 +43,11 @@ class GitWorkingCopy(object):
 	#
 
 	@property
+	def isDirty(self) -> bool:
+		return len(self.status(bIncludeIgnored = False)) > 0
+	#
+
+	@property
 	def rootDir(self) -> str:
 		return self.__gitRootDir
 	#
