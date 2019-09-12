@@ -39,7 +39,7 @@ class GitWorkingCopy(object):
 
 	@property
 	def isClean(self) -> bool:
-		return len(self.status()) == 0
+		return len(self.status(bIncludeIgnored = False)) == 0
 	#
 
 	@property
