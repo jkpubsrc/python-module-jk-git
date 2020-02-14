@@ -5,6 +5,7 @@ import os
 
 import jk_simpleexec
 import jk_utils
+import jk_version
 
 from .GitFile import AbstractRepositoryFile, GitFile
 from .git_config_file import GitConfigFile
@@ -25,8 +26,8 @@ class _GitWrapper(object):
 			raise Exception("Running git failed!")
 		lines = r.stdOutLines
 		if lines[0].startswith("git version "):
-			v = jk_utils.Version(lines[0][12:].strip())
-			self.__gitPorcelainVersion = 1 if v < jk_utils.Version("2.8") else 2
+			v = jk_version.Version(lines[0][12:].strip())
+			self.__gitPorcelainVersion = 1 if v < jk_version.Version("2.8") else 2
 		else:
 			print(lines[0])
 			raise Exception("Failed to parse version!")

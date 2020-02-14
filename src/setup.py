@@ -19,12 +19,11 @@ setup(
 	author = "Jürgen Knauth",
 	author_email = "pubsrc@binary-overflow.de",
 	classifiers = [
-		"Programming Language :: Python :: 3",
 		"Development Status :: 3 - Alpha",
 		"License :: OSI Approved :: Apache Software License",
 	],
-	description = "This python module is a wrapper around git (= the git binary file). It is ment to provide an simple interface to git. (With currently quite limited capabilities.)",
-	download_url = "https://github.com/jkpubsrc/python-module-jk-git/tarball/0.2019.9.11",
+	description = "This python module is a wrapper around git (= the git binary file). It is ment as a simple interface to basic git functionality.",
+	download_url = "https://github.com/jkpubsrc/python-module-jk-git/tarball/0.2020.1.14",
 	include_package_data = False,
 	install_requires = [
 		"jk_simpleexec",
@@ -38,7 +37,7 @@ setup(
 		"jk_git",
 	],
 	url = "https://github.com/jkpubsrc/python-module-jk-git",
-	version = "0.2019.9.11",
+	version = "0.2020.1.14",
 	zip_safe = False,
 	long_description = readme(),
 	long_description_content_type="text/markdown",
