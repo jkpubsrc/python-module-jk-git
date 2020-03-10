@@ -58,7 +58,7 @@ class GitWorkingCopy(object):
 	#
 
 	@property
-	def areCredentialsStored(self) -> str:
+	def areCredentialsStored(self) -> bool:
 		s = self.__gitCfgFile.getValue("credential", "helper")
 		return s == "store"
 	#
