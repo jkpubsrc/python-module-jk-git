@@ -47,10 +47,13 @@ class _GitWrapper(object):
 			r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored=traditional" ])
 		else:
 			raise Exception()
-		if (r is None) or r.isError or not r.stdOutLines:
+		if (r is None) or r.isError:
 			r.dump()
 			raise Exception("Running git failed!")
-		return r.stdOutLines
+		if r.stdOutLines:
+			return r.stdOutLines
+		else:
+			return []
 	#
 
 #
