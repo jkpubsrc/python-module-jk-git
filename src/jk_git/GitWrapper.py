@@ -66,18 +66,20 @@ class GitWrapper(object):
 
 	def __init__(self):
 		global _GIT_WRAPPER_INST
+
 		if _GIT_WRAPPER_INST is None:
 			_GIT_WRAPPER_INST = _GitWrapper()
-			self.porcelainVersion = _GIT_WRAPPER_INST.porcelainVersion
-			self.status = _GIT_WRAPPER_INST.status
+
+		self.porcelainVersion = _GIT_WRAPPER_INST.porcelainVersion
+		self.status = _GIT_WRAPPER_INST.status
 	#
 
 	def status(self, gitRootDir:str, bIncludeIgnored:bool = False) -> list:
-		pass
+		raise Exception()
 	#
 
 	def porcelainVersion(self):
-		pass
+		raise Exception()
 	#
 
 #

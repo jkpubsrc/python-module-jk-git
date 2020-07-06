@@ -1,7 +1,7 @@
 {
 	"language": "python3",
 	"name": "jk_git",
-	"version": "0.2020.1.14",
+	"version": "0.2020.7.6",
 	"meta": {
 		"description": "This python module is a wrapper around git (= the git binary file). It is ment as a simple interface to basic git functionality.",
 		"keywords": [
