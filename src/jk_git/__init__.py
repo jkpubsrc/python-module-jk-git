@@ -1,7 +1,7 @@
 ﻿
 
 
-__version__ = "0.2020.7.6"
+__version__ = "0.2020.7.7"
 
 
 from .AbstractRepositoryFile import AbstractRepositoryFile
