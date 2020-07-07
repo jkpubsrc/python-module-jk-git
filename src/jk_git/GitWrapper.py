@@ -7,7 +7,7 @@ import jk_simpleexec
 import jk_utils
 import jk_version
 
-from .GitFile import AbstractRepositoryFile, GitFile
+from .GitFileInfo import AbstractRepositoryFile, GitFileInfo
 from .git_config_file import GitConfigFile
 
 
@@ -15,6 +15,9 @@ from .git_config_file import GitConfigFile
 
 
 
+#
+# This class wraps around the program 'git'. It's methods provide raw unprocessed output as returned by the git tool.
+#
 class _GitWrapper(object):
 
 	def __init__(self):
@@ -38,7 +41,9 @@ class _GitWrapper(object):
 	#
 
 	#
-	# @return	GitFile[]	Files
+	# Retrieve the status of this working copy
+	#
+	# @return	str[]		Text output of the 'status' command
 	#
 	def status(self, gitRootDir:str, bIncludeIgnored:bool = False) -> list:
 		if self.__gitPorcelainVersion == 1:
@@ -54,6 +59,25 @@ class _GitWrapper(object):
 			return r.stdOutLines
 		else:
 			return []
+	#
+
+	#
+	# Download a single file from the HEAD revision.
+	#
+	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
+	#
+	def downloadFromHead(self, gitRootDir:str, filePath:str) -> str:
+		r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "show", "HEAD:" + filePath ])
+		if (r is None) or r.isError:
+			if (r.returnCode == 128) and r.stdErrLines and r.stdErrLines[0].startswith("fatal:"):
+				if ("does not exist" in r.stdErrLines[0]) or ("but not in head" in r.stdErrLines[0]):
+					return None
+			r.dump()
+			raise Exception("Running git failed!")
+		if r.stdOutLines:
+			return "\n".join(r.stdOutLines)
+		else:
+			return ""
 	#
 
 #
@@ -75,13 +99,28 @@ class GitWrapper(object):
 
 		self.porcelainVersion = _GIT_WRAPPER_INST.porcelainVersion
 		self.status = _GIT_WRAPPER_INST.status
+		self.downloadFromHead = _GIT_WRAPPER_INST.downloadFromHead
 	#
 
+	def porcelainVersion(self):
+		raise Exception()
+	#
+
+	#
+	# Retrieve the status of this working copy
+	#
+	# @return	str[]		Text output of the 'status' command
+	#
 	def status(self, gitRootDir:str, bIncludeIgnored:bool = False) -> list:
 		raise Exception()
 	#
 
-	def porcelainVersion(self):
+	#
+	# Download a single file from the HEAD revision.
+	#
+	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
+	#
+	def downloadFromHead(self, gitRootDir:str, filePath:str) -> list:
 		raise Exception()
 	#
 

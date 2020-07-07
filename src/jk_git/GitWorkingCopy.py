@@ -6,7 +6,7 @@ import os
 import jk_simpleexec
 
 from .GitWrapper import GitWrapper
-from .GitFile import AbstractRepositoryFile, GitFile
+from .GitFileInfo import AbstractRepositoryFile, GitFileInfo
 from .git_config_file import GitConfigFile
 
 
@@ -186,7 +186,9 @@ class GitWorkingCopy(object):
 	#
 
 	#
-	# @return	GitFile[]	Files
+	# Retrieve the status of this working copy
+	#
+	# @return	GitFileInfo[]	A list of file information objects.
 	#
 	def status(self, bIncludeIgnored:bool = False) -> list:
 		lines = self.__git.status(self.__gitRootDir, bIncludeIgnored)
@@ -211,31 +213,31 @@ class GitWorkingCopy(object):
 					m = g[1:]
 					if sType == "?":
 						# untracked
-						ret.append(GitFile(self, GitFile.UNVERSIONED, m[0]))
+						ret.append(GitFileInfo(self, GitFileInfo.UNVERSIONED, m[0]))
 						bSuccess = True
 					elif sType == "!":
 						# ignored
-						ret.append(GitFile(self, GitFile.IGNORED, m[0]))
+						ret.append(GitFileInfo(self, GitFileInfo.IGNORED, m[0]))
 						bSuccess = True
 					elif sType == "A":
 						# added
-						ret.append(GitFile(self, GitFile.ADDED, m[-1]))
+						ret.append(GitFileInfo(self, GitFileInfo.ADDED, m[-1]))
 						bSuccess = True
 					elif sType == "M":
 						# modified
-						ret.append(GitFile(self, GitFile.MODIFIED, m[-1]))
+						ret.append(GitFileInfo(self, GitFileInfo.MODIFIED, m[-1]))
 						bSuccess = True
 					elif sType == "R":
 						# renamed
-						ret.append(GitFile(self, GitFile.RENAMED, m[-1]))
+						ret.append(GitFileInfo(self, GitFileInfo.RENAMED, m[-1]))
 						bSuccess = True
 					elif sType == "D":
 						# renamed
-						ret.append(GitFile(self, GitFile.DELETED, m[-1]))
+						ret.append(GitFileInfo(self, GitFileInfo.DELETED, m[-1]))
 						bSuccess = True
 					elif sType == "U":
 						# conflicted
-						ret.append(GitFile(self, GitFile.CONFLICTED, m[-1]))
+						ret.append(GitFileInfo(self, GitFileInfo.CONFLICTED, m[-1]))
 						bSuccess = True
 
 				elif porcellainVersion == 2:
@@ -243,34 +245,43 @@ class GitWorkingCopy(object):
 					m = g[1:]
 					if sType == "?":
 						# untracked
-						ret.append(GitFile(self, GitFile.UNVERSIONED, m[0]))
+						ret.append(GitFileInfo(self, GitFileInfo.UNVERSIONED, m[0]))
 						bSuccess = True
 					elif sType == "!":
 						# ignored
-						ret.append(GitFile(self, GitFile.IGNORED, m[0]))
+						ret.append(GitFileInfo(self, GitFileInfo.IGNORED, m[0]))
 						bSuccess = True
 					elif sType == "1":
 						# modified
 						if "A" in m[0]:
-							ret.append(GitFile(self, GitFile.ADDED, m[-1]))
+							ret.append(GitFileInfo(self, GitFileInfo.ADDED, m[-1]))
 						else:
-							ret.append(GitFile(self, GitFile.MODIFIED, m[-1]))
+							ret.append(GitFileInfo(self, GitFileInfo.MODIFIED, m[-1]))
 						bSuccess = True
 					elif sType == "2":
 						# renamed
-						ret.append(GitFile(self, GitFile.RENAMED, m[-1]))
+						ret.append(GitFileInfo(self, GitFileInfo.RENAMED, m[-1]))
 						bSuccess = True
 					elif sType == "u":
 						# conflicted
-						ret.append(GitFile(self, GitFile.CONFLICTED, m[-1]))
+						ret.append(GitFileInfo(self, GitFileInfo.CONFLICTED, m[-1]))
 						bSuccess = True
 
 			if not bSuccess:
 				raise Exception("Failed to parse line: " + repr(line))
 
 		if not bIncludeIgnored:
-			ret = [ x for x in ret if x.status() != GitFile.IGNORED ]
+			ret = [ x for x in ret if x.status() != GitFileInfo.IGNORED ]
 		return ret
+	#
+
+	#
+	# Download a single file from the HEAD revision.
+	#
+	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
+	#
+	def downloadFromHead(self, filePath:str) -> str:
+		return self.__git.downloadFromHead(self.__gitRootDir, filePath)
 	#
 
 #

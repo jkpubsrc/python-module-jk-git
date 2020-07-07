@@ -3,12 +3,13 @@
 
 
 import jk_git
+import jk_json
 
 
 
 git = jk_git.GitWrapper()
 print(git.porcelainVersion())
-print(git.status(".."))
+jk_json.prettyPrint(git.status(".."))
 
 
 
