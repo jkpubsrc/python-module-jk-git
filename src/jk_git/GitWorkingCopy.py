@@ -28,14 +28,9 @@ class GitWorkingCopy(object):
 			raise Exception("Can't find git root directory: " + rootDir)
 	#
 
-	@staticmethod
-	def hasWorkingCopy(dirPath:str) -> bool:
-		assert isinstance(dirPath, str)
-		assert os.path.isdir(dirPath)
-		dirPath = os.path.abspath(dirPath)
-		gitRootDir = GitWorkingCopy.__findRootDir(dirPath, False)
-		return gitRootDir is not None
-	#
+	################################################################################################################################
+	## Public Properties
+	################################################################################################################################
 
 	@property
 	def isClean(self) -> bool:
@@ -71,21 +66,9 @@ class GitWorkingCopy(object):
 		return s
 	#
 
-	@staticmethod
-	def __findRootDir(rootDir:str, bRecursive:bool = True):
-		if len(rootDir) <= 1:
-			return None
-		testDir = rootDir + "/.git"
-		if os.path.isdir(testDir):
-			return rootDir
-		pos = rootDir.rfind("/")
-		if pos <= 0:
-			return None
-		if bRecursive:
-			return GitWorkingCopy.__findRootDir(rootDir[:pos])
-		else:
-			return None
-	#
+	################################################################################################################################
+	## Helper Methods
+	################################################################################################################################
 
 	def __parseAny1(self, line:str):
 		m = re.match("^\s*([A-Z\?!]+)\s+(.+)$", line)
@@ -185,6 +168,17 @@ class GitWorkingCopy(object):
 		return None
 	#
 
+	################################################################################################################################
+	## Public Methods
+	################################################################################################################################
+
+	def addFile(self, filePath:str):
+		lines = self.__git.add(self.__gitRootDir, filePath)
+		if lines:
+			raise Exception("Unexpected output received: " + repr(lines))
+
+	#
+
 	#
 	# Retrieve the status of this working copy
 	#
@@ -282,6 +276,39 @@ class GitWorkingCopy(object):
 	#
 	def downloadFromHead(self, filePath:str) -> str:
 		return self.__git.downloadFromHead(self.__gitRootDir, filePath)
+	#
+
+	################################################################################################################################
+	## Static Helper Methods
+	################################################################################################################################
+
+	################################################################################################################################
+	## Static Methods
+	################################################################################################################################
+
+	@staticmethod
+	def hasWorkingCopy(dirPath:str) -> bool:
+		assert isinstance(dirPath, str)
+		assert os.path.isdir(dirPath)
+		dirPath = os.path.abspath(dirPath)
+		gitRootDir = GitWorkingCopy.__findRootDir(dirPath, False)
+		return gitRootDir is not None
+	#
+
+	@staticmethod
+	def __findRootDir(rootDir:str, bRecursive:bool = True):
+		if len(rootDir) <= 1:
+			return None
+		testDir = rootDir + "/.git"
+		if os.path.isdir(testDir):
+			return rootDir
+		pos = rootDir.rfind("/")
+		if pos <= 0:
+			return None
+		if bRecursive:
+			return GitWorkingCopy.__findRootDir(rootDir[:pos])
+		else:
+			return None
 	#
 
 #

@@ -1,4 +1,4 @@
-﻿jk_git
+jk_git
 ==========
 
 Introduction

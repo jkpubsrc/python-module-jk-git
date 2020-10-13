@@ -1,49 +1,51 @@
 {
-	"language": "python3",
-	"name": "jk_git",
-	"version": "0.2020.7.7",
+	"documentation": [],
+	"magic": {
+		"magic": "packageinfo",
+		"version": 2
+	},
 	"meta": {
+		"authors": [
+			{
+				"email": "pubsrc@binary-overflow.de",
+				"name": "J\u00fcrgen Knauth"
+			}
+		],
 		"description": "This python module is a wrapper around git (= the git binary file). It is ment as a simple interface to basic git functionality.",
+		"development_status": "stable",
 		"keywords": [
 			"git"
 		],
-		"license": "Apache 2.0",
-		"development_status": "alpha",
-		"authors": [
-			{
-				"name": "Jürgen Knauth",
-				"email": "pubsrc@binary-overflow.de"
-			}
-		],
-		"wiki": {
-			"page": "DevDocs:jk_git"
-		}
+		"language": "python3",
+		"license": "Apache2",
+		"name": "jk_git",
+		"packageClass": "python-module",
+		"version": "0.2020.10.13"
 	},
 	"repositories": [
 		{
-			"type": "github",
-			"user": "jkpubsrc",
+			"devon_publish": false,
 			"project": "python-module-jk-git",
-			"devon_publish": false
+			"type": "github",
+			"user": "jkpubsrc"
 		},
 		{
-			"type": "pypy",
-			"devon_publish": false
+			"devon_publish": false,
+			"type": "pypi"
 		}
 	],
-	"source": {
-		"packages": [
-			"jk_git"
-		],
-		"extra_data_files": [
-		]
-	},
 	"requirements": {
 		"python_packages": [
 			"jk_simpleexec"
 		],
-		"python_packages_dev": [
+		"python_packages_dev": [],
+		"system_apt_packages": []
+	},
+	"source": {
+		"extra_binary_files": [],
+		"extra_data_files": [],
+		"packages": [
+			"jk_git"
 		]
 	}
 }
-

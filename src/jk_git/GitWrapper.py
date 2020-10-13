@@ -62,6 +62,30 @@ class _GitWrapper(object):
 	#
 
 	#
+	# Add a file to the git repository.
+	#
+	# @return	str[]		Text output of the 'add' command
+	#
+	def add(self, gitRootDir:str, filePath:str) -> list:
+		assert os.path.isabs(filePath)
+
+		s = gitRootDir
+		if not s.endswith("/"):
+			s += "/"
+		if not filePath.startswith(s):
+			raise Exception("File does not seem to be part of the git tree: " + filePath)
+
+		r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "add", filePath ])
+		if (r is None) or r.isError:
+			r.dump()
+			raise Exception("Running git failed!")
+		if r.stdOutLines:
+			return r.stdOutLines
+		else:
+			return []
+	#
+
+	#
 	# Download a single file from the HEAD revision.
 	#
 	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
@@ -70,7 +94,7 @@ class _GitWrapper(object):
 		r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "show", "HEAD:" + filePath ])
 		if (r is None) or r.isError:
 			if (r.returnCode == 128) and r.stdErrLines and r.stdErrLines[0].startswith("fatal:"):
-				if ("does not exist" in r.stdErrLines[0]) or ("but not in head" in r.stdErrLines[0]):
+				if ("does not exist" in r.stdErrLines[0]) or ("but not in 'HEAD'" in r.stdErrLines[0]):
 					return None
 			r.dump()
 			raise Exception("Running git failed!")
@@ -100,6 +124,7 @@ class GitWrapper(object):
 		self.porcelainVersion = _GIT_WRAPPER_INST.porcelainVersion
 		self.status = _GIT_WRAPPER_INST.status
 		self.downloadFromHead = _GIT_WRAPPER_INST.downloadFromHead
+		self.add = _GIT_WRAPPER_INST.add
 	#
 
 	def porcelainVersion(self):
@@ -121,6 +146,15 @@ class GitWrapper(object):
 	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
 	#
 	def downloadFromHead(self, gitRootDir:str, filePath:str) -> list:
+		raise Exception()
+	#
+
+	#
+	# Add a file to the git repository.
+	#
+	# @return	str[]		Text output of the 'add' command
+	#
+	def add(self, gitRootDir:str, filePath:str) -> list:
 		raise Exception()
 	#
 
