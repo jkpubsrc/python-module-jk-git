@@ -36,7 +36,7 @@ setup(
 	packages = [
 		"jk_git",
 	],
-	version = "0.2020.10.13",
+	version = "0.2020.10.13.1",
 	zip_safe = False,
 	long_description = readme(),
 	long_description_content_type="text/markdown",

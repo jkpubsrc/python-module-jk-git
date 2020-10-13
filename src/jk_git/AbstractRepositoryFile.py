@@ -29,12 +29,16 @@ class AbstractRepositoryFile(object):
 		self.__filePath = filePath
 	#
 
-	def filePath(self):
+	def filePath(self) -> str:
 		return self.__filePath
 	#
 
-	def status(self):
+	def status(self) -> str:
 		return self.__status
+	#
+
+	def statusText(self) -> str:
+		return self.STATE_MAP[self.__status]
 	#
 
 	def workingCopy(self):

@@ -47,9 +47,16 @@ class _GitWrapper(object):
 	#
 	def status(self, gitRootDir:str, bIncludeIgnored:bool = False) -> list:
 		if self.__gitPorcelainVersion == 1:
-			r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain", "-uall", "--ignored" ])
+			if bIncludeIgnored:
+				r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain", "-uall", "--ignored" ])
+			else:
+				r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain", "-uall" ])
 		elif self.__gitPorcelainVersion == 2:
-			r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored=traditional" ])
+			if bIncludeIgnored:
+				#r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored=traditional" ])
+				r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored" ])
+			else:
+				r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain=2", "-uall" ])
 		else:
 			raise Exception()
 		if (r is None) or r.isError:
