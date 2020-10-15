@@ -5,10 +5,11 @@ import re
 import os
 
 import jk_simpleexec
+import jk_prettyprintobj
 
 from .GitWrapper import GitWrapper
 from .GitFileInfo import AbstractRepositoryFile, GitFileInfo
-from .git_config_file import GitConfigFile
+from .GitConfigFile import GitConfigFile
 from .GitCommitHistory import GitCommitHistory
 
 
@@ -19,14 +20,14 @@ from .GitCommitHistory import GitCommitHistory
 
 
 
-class GitWorkingCopy(object):
+class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 
 	def __init__(self, rootDir:str):
 		self.__gitWrapper = GitWrapper()
 		gitRootDir = GitWorkingCopy.__findRootDir(os.path.abspath(rootDir))
 		if gitRootDir:
 			self.__gitRootDir = gitRootDir
-			self.__gitCfgFile = GitConfigFile(gitRootDir)
+			self.__gitCfgFile = GitConfigFile(os.path.join(gitRootDir, ".git", "config"))
 		else:
 			raise Exception("Can't find git root directory: " + rootDir)
 	#
@@ -77,6 +78,22 @@ class GitWorkingCopy(object):
 			if m:
 				ret.append(m.group(1))
 		return ret
+	#
+
+	################################################################################################################################
+	## Protected Methods
+	################################################################################################################################
+
+	def _dumpVarNames(self):
+		return [
+			"rootDir",
+			"isClean",
+			"isDirty",
+			"remoteOrigin",
+			"areCredentialsStored",
+			"repositoryURL",
+			"remotes",
+		]
 	#
 
 	################################################################################################################################

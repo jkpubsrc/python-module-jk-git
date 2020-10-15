@@ -8,7 +8,6 @@ import jk_utils
 import jk_version
 
 from .GitFileInfo import AbstractRepositoryFile, GitFileInfo
-from .git_config_file import GitConfigFile
 
 
 

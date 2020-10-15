@@ -20,7 +20,7 @@
 		"license": "Apache2",
 		"name": "jk_git",
 		"packageClass": "python-module",
-		"version": "0.2020.10.15"
+		"version": "0.2020.10.15.1"
 	},
 	"repositories": [
 		{
@@ -39,7 +39,9 @@
 			"python-dateutil",
 			"jk_simpleexec",
 			"jk_prettyprintobj",
-			"jk_typing"
+			"jk_typing",
+			"jk_utils",
+			"jk_prettyprintobj"
 		],
 		"python_packages_dev": [],
 		"system_apt_packages": []
