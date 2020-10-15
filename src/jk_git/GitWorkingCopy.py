@@ -8,6 +8,8 @@ import jk_simpleexec
 from .GitWrapper import GitWrapper
 from .GitFileInfo import AbstractRepositoryFile, GitFileInfo
 from .git_config_file import GitConfigFile
+from .GitCommitHistory import GitCommitHistory
+
 
 
 
@@ -19,7 +21,7 @@ from .git_config_file import GitConfigFile
 class GitWorkingCopy(object):
 
 	def __init__(self, rootDir:str):
-		self.__git = GitWrapper()
+		self.__gitWrapper = GitWrapper()
 		gitRootDir = GitWorkingCopy.__findRootDir(os.path.abspath(rootDir))
 		if gitRootDir:
 			self.__gitRootDir = gitRootDir
@@ -173,7 +175,7 @@ class GitWorkingCopy(object):
 	################################################################################################################################
 
 	def addFile(self, filePath:str):
-		lines = self.__git.add(self.__gitRootDir, filePath)
+		lines = self.__gitWrapper.add(self.__gitRootDir, filePath)
 		if lines:
 			raise Exception("Unexpected output received: " + repr(lines))
 
@@ -185,8 +187,8 @@ class GitWorkingCopy(object):
 	# @return	GitFileInfo[]	A list of file information objects.
 	#
 	def status(self, bIncludeIgnored:bool = False) -> list:
-		lines = self.__git.status(self.__gitRootDir, bIncludeIgnored)
-		porcellainVersion = self.__git.porcelainVersion()
+		lines = self.__gitWrapper.status(self.__gitRootDir, bIncludeIgnored)
+		porcellainVersion = self.__gitWrapper.porcelainVersion()
 
 		ret = []
 		for line in lines:
@@ -275,7 +277,14 @@ class GitWorkingCopy(object):
 	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
 	#
 	def downloadFromHead(self, filePath:str) -> str:
-		return self.__git.downloadFromHead(self.__gitRootDir, filePath)
+		return self.__gitWrapper.downloadFromHead(self.__gitRootDir, filePath)
+	#
+
+	#
+	# Retrieve the commit history.
+	#
+	def getCommitHistory(self) -> GitCommitHistory:
+		return GitCommitHistory.create(self.__gitRootDir, self.__gitWrapper)
 	#
 
 	################################################################################################################################

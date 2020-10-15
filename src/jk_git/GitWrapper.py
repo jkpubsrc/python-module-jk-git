@@ -13,6 +13,9 @@ from .git_config_file import GitConfigFile
 
 
 
+GIT_PATH = "/usr/bin/git"
+
+
 
 
 #
@@ -21,9 +24,9 @@ from .git_config_file import GitConfigFile
 class _GitWrapper(object):
 
 	def __init__(self):
-		if not os.path.isfile("/usr/bin/git"):
+		if not os.path.isfile(GIT_PATH):
 			raise Exception("Git seems not to be installed!")
-		r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "--version" ])
+		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "--version" ])
 		if (r is None) or r.isError:
 			r.dump()
 			raise Exception("Running git failed!")
@@ -48,15 +51,15 @@ class _GitWrapper(object):
 	def status(self, gitRootDir:str, bIncludeIgnored:bool = False) -> list:
 		if self.__gitPorcelainVersion == 1:
 			if bIncludeIgnored:
-				r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain", "-uall", "--ignored" ])
+				r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "status", "--porcelain", "-uall", "--ignored" ])
 			else:
-				r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain", "-uall" ])
+				r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "status", "--porcelain", "-uall" ])
 		elif self.__gitPorcelainVersion == 2:
 			if bIncludeIgnored:
-				#r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored=traditional" ])
-				r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored" ])
+				#r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored=traditional" ])
+				r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored" ])
 			else:
-				r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "status", "--porcelain=2", "-uall" ])
+				r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall" ])
 		else:
 			raise Exception()
 		if (r is None) or r.isError:
@@ -82,7 +85,7 @@ class _GitWrapper(object):
 		if not filePath.startswith(s):
 			raise Exception("File does not seem to be part of the git tree: " + filePath)
 
-		r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "add", filePath ])
+		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "add", filePath ])
 		if (r is None) or r.isError:
 			r.dump()
 			raise Exception("Running git failed!")
@@ -93,12 +96,33 @@ class _GitWrapper(object):
 	#
 
 	#
+	# Show the log
+	#
+	# @return	str[]		Text output of the 'log' command
+	#
+	def logPretty(self, gitRootDir:str) -> list:
+		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "log", "--pretty=format:\"%P|%H|%cn|%ce|%cd|%s\"" ])
+		if (r is None) or r.isError:
+			r.dump()
+			raise Exception("Running git failed!")
+		if r.stdOutLines:
+			ret = []
+			for line in r.stdOutLines:
+				assert line[0] == "\""
+				assert line[-1] == "\""
+				ret.append(line[1:-1])
+			return ret
+		else:
+			return []
+	#
+
+	#
 	# Download a single file from the HEAD revision.
 	#
 	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
 	#
 	def downloadFromHead(self, gitRootDir:str, filePath:str) -> str:
-		r = jk_simpleexec.invokeCmd("/usr/bin/git", [ "-C", gitRootDir, "show", "HEAD:" + filePath ])
+		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "show", "HEAD:" + filePath ])
 		if (r is None) or r.isError:
 			if (r.returnCode == 128) and r.stdErrLines and r.stdErrLines[0].startswith("fatal:"):
 				if ("does not exist" in r.stdErrLines[0]) or ("but not in 'HEAD'" in r.stdErrLines[0]):
@@ -120,6 +144,7 @@ _GIT_WRAPPER_INST = None
 
 
 
+
 class GitWrapper(object):
 
 	def __init__(self):
@@ -132,6 +157,7 @@ class GitWrapper(object):
 		self.status = _GIT_WRAPPER_INST.status
 		self.downloadFromHead = _GIT_WRAPPER_INST.downloadFromHead
 		self.add = _GIT_WRAPPER_INST.add
+		self.logPretty = _GIT_WRAPPER_INST.logPretty
 	#
 
 	def porcelainVersion(self):
@@ -144,6 +170,10 @@ class GitWrapper(object):
 	# @return	str[]		Text output of the 'status' command
 	#
 	def status(self, gitRootDir:str, bIncludeIgnored:bool = False) -> list:
+		raise Exception()
+	#
+
+	def logPretty(self, gitRootDir:str) -> list:
 		raise Exception()
 	#
 

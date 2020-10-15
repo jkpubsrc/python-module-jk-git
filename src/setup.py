@@ -26,7 +26,10 @@ setup(
 	description = "This python module is a wrapper around git (= the git binary file). It is ment as a simple interface to basic git functionality.",
 	include_package_data = False,
 	install_requires = [
+		"python-dateutil",
 		"jk_simpleexec",
+		"jk_prettyprintobj",
+		"jk_typing",
 	],
 	keywords = [
 		"git",
@@ -36,7 +39,7 @@ setup(
 	packages = [
 		"jk_git",
 	],
-	version = "0.2020.10.13.1",
+	version = "0.2020.10.15",
 	zip_safe = False,
 	long_description = readme(),
 	long_description_content_type="text/markdown",

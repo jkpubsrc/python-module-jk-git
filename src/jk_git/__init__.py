@@ -1,7 +1,7 @@
 ﻿
 
 
-__version__ = "0.2020.10.13.1"
+__version__ = "0.2020.10.15"
 
 
 
@@ -10,4 +10,9 @@ from .AbstractRepositoryFile import AbstractRepositoryFile
 from .GitFileInfo import GitFileInfo
 from .GitWrapper import GitWrapper
 from .GitWorkingCopy import GitWorkingCopy
+from .GitCommitHistory import GitCommitHistory
+from .GitCommitHistoryEntry import GitCommitHistoryEntry
+
+
+
 
