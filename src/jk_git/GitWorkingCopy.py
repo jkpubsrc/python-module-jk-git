@@ -1,5 +1,6 @@
 
 
+import typing
 import re
 import os
 
@@ -66,6 +67,16 @@ class GitWorkingCopy(object):
 		if s and s.endswith(".git"):
 			s = s[:-4]
 		return s
+	#
+
+	@property
+	def remotes(self) -> typing.List[str]:
+		ret = []
+		for sectionName in self.__gitCfgFile.sectionNames:
+			m = re.match("^remote \"(.*)\"$", sectionName)
+			if m:
+				ret.append(m.group(1))
+		return ret
 	#
 
 	################################################################################################################################

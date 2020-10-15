@@ -23,13 +23,13 @@ class GitConfigFile(object):
 			else:
 				raise Exception("Not a git configuration file: " + repr(path))
 
-		self.__data = self.__loadFile(p) if p else None
+		self.__sections = self.__loadFile(p) if p else None
 	#
 
 	def dump(self):
 		print("GitConfigFile[")
-		if self.__data:
-			lines = json.dumps(self.__data, sort_keys=True, indent="\t").split()
+		if self.__sections:
+			lines = json.dumps(self.__sections, sort_keys=True, indent="\t").split()
 			for line in lines[1:-1]:
 				print("\t" + line)
 		else:
@@ -38,7 +38,7 @@ class GitConfigFile(object):
 	#
 
 	def getValue(self, sectionName:str, key:str):
-		section = self.__data.get(sectionName)
+		section = self.__sections.get(sectionName)
 		if section:
 			return section.get(key)
 		else:
@@ -46,14 +46,15 @@ class GitConfigFile(object):
 	#
 
 	def getSection(self, sectionName:str):
-		return self.__data.get(sectionName)
+		return self.__sections.get(sectionName)
 	#
 
+	@property
 	def sectionNames(self):
-		return sorted(self.__data.keys())
+		return sorted(self.__sections.keys())
 	#
 
-	def __loadFile(self, path:str):
+	def __loadFile(self, path:str) -> dict:
 		sections = {}
 
 		with open(path, "r") as f:
