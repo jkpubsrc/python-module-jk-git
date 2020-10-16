@@ -1,7 +1,7 @@
 ﻿
 
 
-__version__ = "0.2020.10.15.1"
+__version__ = "0.2020.10.16"
 
 
 
@@ -13,6 +13,5 @@ from .GitCommitHistory import GitCommitHistory
 from .GitCommitHistoryEntry import GitCommitHistoryEntry
 from .GitServerRepository import GitServerRepository
 from .GitWorkingCopy import GitWorkingCopy
-
 
 

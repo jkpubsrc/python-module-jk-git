@@ -20,7 +20,7 @@
 		"license": "Apache2",
 		"name": "jk_git",
 		"packageClass": "python-module",
-		"version": "0.2020.10.15.1"
+		"version": "0.2020.10.16"
 	},
 	"repositories": [
 		{

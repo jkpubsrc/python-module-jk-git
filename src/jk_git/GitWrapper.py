@@ -102,8 +102,13 @@ class _GitWrapper(object):
 	def logPretty(self, gitRootDir:str) -> list:
 		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "log", "--pretty=format:\"%P|%H|%cn|%ce|%cd|%s\"" ])
 		if (r is None) or r.isError:
-			r.dump()
-			raise Exception("Running git failed!")
+			if r.stdErrLines \
+				and (r.stdErrLines[0].find("fatal: your current branch") >= 0) \
+				and (r.stdErrLines[0].find("does not have any commits yet") >= 0):
+				return []
+			else:
+				r.dump()
+				raise Exception("Running git failed!")
 		if r.stdOutLines:
 			ret = []
 			for line in r.stdOutLines:

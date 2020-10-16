@@ -95,9 +95,16 @@ class GitCommitHistory(jk_prettyprintobj.DumpMixin):
 	## Static Methods
 	################################################################################################################################
 
+	#
+	# This method tries to create a GitCommitHistory object.
+	#
+	# @return		Returns (null) if no commits have been made jet, an instance of GitCommitHistory otherwise.
+	#
 	@staticmethod
 	def create(rootDir:str, wrapper:GitWrapper):
 		stdLines = wrapper.logPretty(rootDir)
+		if not stdLines:
+			return None
 
 		entriesList = []
 		for line in stdLines:
