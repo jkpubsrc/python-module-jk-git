@@ -70,6 +70,32 @@ class _GitWrapper(object):
 			return []
 	#
 
+	def lsRemote_url(self, url:str) -> list:
+		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "ls-remote", url ])
+		if (r is None) or r.isError:
+			r.dump()
+			raise Exception("Running git failed!")
+		ret = []
+		for line in r.stdOutLines:
+			m = re.match("^([a-zA-Z0-9]+)\s+(.*)$", line.strip())
+			if m:
+				ret.append([ m.group(1), m.group(2) ])
+		return ret
+	#
+
+	def lsRemote_dir(self, gitRootDir:str) -> list:
+		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "ls-remote" ])
+		if (r is None) or (r.returnCode != 0):
+			r.dump()
+			raise Exception("Running git failed!")
+		ret = []
+		for line in r.stdOutLines:
+			m = re.match("^([a-zA-Z0-9]+)\s+(.*)$", line.strip())
+			if m:
+				ret.append([ m.group(1), m.group(2) ])
+		return ret
+	#
+
 	#
 	# Add a file to the git repository.
 	#
@@ -90,6 +116,50 @@ class _GitWrapper(object):
 			raise Exception("Running git failed!")
 		if r.stdOutLines:
 			return r.stdOutLines
+		else:
+			return []
+	#
+
+	def pull(self, gitRootDir:str) -> list:
+		assert os.path.isdir(gitRootDir)
+
+		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "pull" ])
+
+		# STDOUT: 'Updating 293bc22..81ad022'
+		# STDOUT: 'Fast-forward'
+		# STDOUT: ' packageinfo.jsonc | 4 +++-'
+		# STDOUT: ' 1 file changed, 3 insertions(+), 1 deletion(-)'
+		# STDERR: 'From ssh://123.45.67.89:/foo/bar/some_repo_dir'
+		# STDERR: '   293bc22..81ad022  master     -> origin/master'
+		# RETURNCODE: 0
+
+		if (r is None) or (r.returnCode != 0):
+			r.dump()
+			raise Exception("Running git failed!")
+
+		ret = []
+		if r.stdOutLines:
+			ret.extend(r.stdOutLines)
+		if r.stdErrLines:
+			ret.extend(r.stdErrLines)
+		return ret
+	#
+
+	def clone(self, gitRootDir:str, url:str) -> list:
+		assert os.path.isdir(gitRootDir)
+		assert isinstance(url, str)
+		assert url
+
+		os.makedirs(gitRootDir, exist_ok=True)
+		for something in os.listdir(gitRootDir):
+			raise Exception("Target directory is not empty: " + gitRootDir)
+
+		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "clone", url, "." ], workingDirectory=gitRootDir)
+		if (r is None) or (r.returnCode != 0):
+			r.dump()
+			raise Exception("Running git failed!")
+		if r.stdErrLines:
+			return r.stdErrLines
 		else:
 			return []
 	#
@@ -162,6 +232,22 @@ class GitWrapper(object):
 		self.downloadFromHead = _GIT_WRAPPER_INST.downloadFromHead
 		self.add = _GIT_WRAPPER_INST.add
 		self.logPretty = _GIT_WRAPPER_INST.logPretty
+		self.lsRemote_url = _GIT_WRAPPER_INST.lsRemote_url
+		self.lsRemote_dir = _GIT_WRAPPER_INST.lsRemote_dir
+		self.clone = _GIT_WRAPPER_INST.clone
+		self.pull = _GIT_WRAPPER_INST.pull
+	#
+
+	def pull(self, gitRootDir:str) -> list:
+		raise Exception()
+	#
+
+	def clone(self, gitRootDir:str, url:str) -> list:
+		raise Exception()
+	#
+
+	def lsRemote_url(self, url:str) -> list:
+		raise Exception()
 	#
 
 	def porcelainVersion(self):

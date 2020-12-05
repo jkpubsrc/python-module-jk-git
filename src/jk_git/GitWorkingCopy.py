@@ -6,6 +6,7 @@ import os
 
 import jk_simpleexec
 import jk_prettyprintobj
+import jk_utils
 
 from .GitWrapper import GitWrapper
 from .GitFileInfo import AbstractRepositoryFile, GitFileInfo
@@ -30,6 +31,8 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 			self.__gitCfgFile = GitConfigFile(os.path.join(gitRootDir, ".git", "config"))
 		else:
 			raise Exception("Can't find git root directory: " + rootDir)
+
+		self.__volatileValue_lsRemote = jk_utils.VolatileValue(self.__lsRemote, 15)					# 15 seconds caching time
 	#
 
 	################################################################################################################################
@@ -80,6 +83,14 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 		return ret
 	#
 
+	@property
+	def headRevisionID(self) -> str:
+		for revID, revName in self.__volatileValue_lsRemote.value:
+			if revName == "HEAD":
+				return revID
+		raise Exception("Head revision not found!")
+	#
+
 	################################################################################################################################
 	## Protected Methods
 	################################################################################################################################
@@ -93,12 +104,24 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 			"areCredentialsStored",
 			"repositoryURL",
 			"remotes",
+			"headRevisionID",
 		]
 	#
 
 	################################################################################################################################
 	## Helper Methods
 	################################################################################################################################
+
+	#
+	# Returns something like:
+	# [
+	# 	[	"293bc22fa252a86039060986460275df3f5f0331",	"HEAD"	],
+	# 	[	"293bc22fa252a86039060986460275df3f5f0331",	"refs/heads/master"	]
+	# ]
+	#
+	def __lsRemote(self):
+		return self.__gitWrapper.lsRemote_dir(self.__gitRootDir)
+	#
 
 	def __parseAny1(self, line:str):
 		m = re.match("^\s*([A-Z\?!]+)\s+(.+)$", line)
@@ -202,11 +225,17 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 	## Public Methods
 	################################################################################################################################
 
+	#
+	# Run a <c>git pull</c> request.
+	#
+	def update(self):
+		self.__gitWrapper.pull(self.__gitRootDir)
+	#
+
 	def addFile(self, filePath:str):
 		lines = self.__gitWrapper.add(self.__gitRootDir, filePath)
 		if lines:
 			raise Exception("Unexpected output received: " + repr(lines))
-
 	#
 
 	#

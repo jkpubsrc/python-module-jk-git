@@ -19,6 +19,10 @@ from .GitCommitHistory import GitCommitHistory
 
 class GitServerRepository(jk_prettyprintobj.DumpMixin):
 
+	################################################################################################################################
+	## Constructors
+	################################################################################################################################
+
 	def __init__(self, rootDir:str):
 		self.__gitWrapper = GitWrapper()
 		bIsGitRoot = GitServerRepository.__isRootDir(os.path.abspath(rootDir))
