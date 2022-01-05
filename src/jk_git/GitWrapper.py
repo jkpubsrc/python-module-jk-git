@@ -2,6 +2,7 @@
 
 import re
 import os
+import typing
 
 import jk_simpleexec
 import jk_utils
@@ -12,20 +13,40 @@ from .GitFileInfo import AbstractRepositoryFile, GitFileInfo
 
 
 
-GIT_PATH = "/usr/bin/git"
+
+def _detectGitBinary() -> typing.Union[str,None]:
+	_pathcandidates = None
+	if os.name == "nt":
+		_pathcandidates = [ "C:\\Program Files\\Git\cmd\\git.exe" ]
+	else:
+		_pathcandidates = [ "/usr/bin/git" ]
+
+	# ----
+
+	for pc in _pathcandidates:
+		if os.path.isfile(pc):
+			return pc
+
+	# ----
+
+	return None
+#
 
 
 
 
 #
 # This class wraps around the program 'git'. It's methods provide raw unprocessed output as returned by the git tool.
+# This is a global instance for mimicking a singleton pattern.
 #
 class _GitWrapper(object):
 
 	def __init__(self):
-		if not os.path.isfile(GIT_PATH):
+		self.__gitBinPath = _detectGitBinary()
+		if not self.__gitBinPath:
 			raise Exception("Git seems not to be installed!")
-		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "--version" ])
+
+		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "--version" ])
 		if (r is None) or r.isError:
 			r.dump()
 			raise Exception("Running git failed!")
@@ -50,15 +71,15 @@ class _GitWrapper(object):
 	def status(self, gitRootDir:str, bIncludeIgnored:bool = False) -> list:
 		if self.__gitPorcelainVersion == 1:
 			if bIncludeIgnored:
-				r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "status", "--porcelain", "-uall", "--ignored" ])
+				r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "status", "--porcelain", "-uall", "--ignored" ])
 			else:
-				r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "status", "--porcelain", "-uall" ])
+				r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "status", "--porcelain", "-uall" ])
 		elif self.__gitPorcelainVersion == 2:
 			if bIncludeIgnored:
-				#r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored=traditional" ])
-				r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored" ])
+				#r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored=traditional" ])
+				r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored" ])
 			else:
-				r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall" ])
+				r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall" ])
 		else:
 			raise Exception()
 		if (r is None) or r.isError:
@@ -71,7 +92,7 @@ class _GitWrapper(object):
 	#
 
 	def lsRemote_url(self, url:str) -> list:
-		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "ls-remote", url ])
+		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "ls-remote", url ])
 		if (r is None) or r.isError:
 			r.dump()
 			raise Exception("Running git failed!")
@@ -84,7 +105,7 @@ class _GitWrapper(object):
 	#
 
 	def lsRemote_dir(self, gitRootDir:str) -> list:
-		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "ls-remote" ])
+		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "ls-remote" ])
 		if (r is None) or (r.returnCode != 0):
 			r.dump()
 			raise Exception("Running git failed!")
@@ -110,7 +131,7 @@ class _GitWrapper(object):
 		if not filePath.startswith(s):
 			raise Exception("File does not seem to be part of the git tree: " + filePath)
 
-		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "add", filePath ])
+		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "add", filePath ])
 		if (r is None) or r.isError:
 			r.dump()
 			raise Exception("Running git failed!")
@@ -123,7 +144,7 @@ class _GitWrapper(object):
 	def pull(self, gitRootDir:str) -> list:
 		assert os.path.isdir(gitRootDir)
 
-		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "pull" ])
+		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "pull" ])
 
 		# STDOUT: 'Updating 293bc22..81ad022'
 		# STDOUT: 'Fast-forward'
@@ -154,7 +175,7 @@ class _GitWrapper(object):
 		for something in os.listdir(gitRootDir):
 			raise Exception("Target directory is not empty: " + gitRootDir)
 
-		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "clone", url, "." ], workingDirectory=gitRootDir)
+		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "clone", url, "." ], workingDirectory=gitRootDir)
 		if (r is None) or (r.returnCode != 0):
 			r.dump()
 			raise Exception("Running git failed!")
@@ -170,7 +191,7 @@ class _GitWrapper(object):
 	# @return	str[]		Text output of the 'log' command
 	#
 	def logPretty(self, gitRootDir:str) -> list:
-		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "log", "--pretty=format:\"%P|%H|%cn|%ce|%cd|%s\"" ])
+		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "log", "--pretty=format:\"%P|%H|%cn|%ce|%cd|%s\"" ])
 		if (r is None) or r.isError:
 			if r.stdErrLines \
 				and (r.stdErrLines[0].find("fatal: your current branch") >= 0) \
@@ -196,7 +217,7 @@ class _GitWrapper(object):
 	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
 	#
 	def downloadFromHead(self, gitRootDir:str, filePath:str) -> str:
-		r = jk_simpleexec.invokeCmd(GIT_PATH, [ "-C", gitRootDir, "show", "HEAD:" + filePath ])
+		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "show", "HEAD:" + filePath ])
 		if (r is None) or r.isError:
 			if (r.returnCode == 128) and r.stdErrLines and r.stdErrLines[0].startswith("fatal:"):
 				if ("does not exist" in r.stdErrLines[0]) or ("but not in 'HEAD'" in r.stdErrLines[0]):
@@ -211,6 +232,12 @@ class _GitWrapper(object):
 
 #
 
+
+
+
+
+
+
 _GIT_WRAPPER_INST = None
 
 
@@ -219,6 +246,12 @@ _GIT_WRAPPER_INST = None
 
 
 
+#
+# This class wraps around _GitWrapper.
+# This is a lightweight class.
+#
+# TODO: Implement a better solution.
+#
 class GitWrapper(object):
 
 	def __init__(self):

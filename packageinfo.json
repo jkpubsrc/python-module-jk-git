@@ -12,7 +12,7 @@
 			}
 		],
 		"description": "This python module is a wrapper around git (= the git binary file). It is ment as a simple interface to basic git functionality.",
-		"development_status": "stable",
+		"development_status": "beta",
 		"keywords": [
 			"git"
 		],
@@ -20,7 +20,7 @@
 		"license": "Apache2",
 		"name": "jk_git",
 		"packageClass": "python-module",
-		"version": "0.2020.10.16"
+		"version": "0.2022.1.6"
 	},
 	"repositories": [
 		{

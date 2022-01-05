@@ -1,7 +1,7 @@
 ﻿
 
 
-__version__ = "0.2020.10.16"
+__version__ = "0.2022.1.6"
 
 
 
@@ -15,5 +15,4 @@ from .GitWrapper import GitWrapper
 from .GitServerRepository import GitServerRepository
 from .GitWorkingCopy import GitWorkingCopy
 from .GitRemoteRepository import GitRemoteRepository
-
 
