@@ -20,7 +20,7 @@
 		"license": "Apache2",
 		"name": "jk_git",
 		"packageClass": "python-module",
-		"version": "0.2022.1.6"
+		"version": "0.2022.3.9"
 	},
 	"repositories": [
 		{
@@ -50,7 +50,9 @@
 		"extra_binary_files": [],
 		"extra_data_files": [],
 		"packages": [
-			"jk_git"
+			"jk_git",
+			"jk_git.impl",
+			"jk_git.workingcopy",
 		]
 	}
 }

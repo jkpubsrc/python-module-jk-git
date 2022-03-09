@@ -1,5 +1,6 @@
 
 
+from ast import arguments
 import typing
 import re
 import os
@@ -7,11 +8,14 @@ import os
 import jk_simpleexec
 import jk_prettyprintobj
 import jk_utils
+import jk_logging
 
 from .GitWrapper import GitWrapper
 from .GitFileInfo import AbstractRepositoryFile, GitFileInfo
-from .GitConfigFile import GitConfigFile
+from .impl.GitConfigFileSection import GitConfigFileSection
+from .impl.GitConfigFile import GitConfigFile
 from .GitCommitHistory import GitCommitHistory
+from .workingcopy._GitStatusOutputParser import _GitStatusOutputParser
 
 
 
@@ -23,21 +27,38 @@ from .GitCommitHistory import GitCommitHistory
 
 class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 
-	def __init__(self, rootDir:str):
-		self.__gitWrapper = GitWrapper()
+	def __init__(self,
+			rootDir:str,
+			gitWrapper:GitWrapper = None,
+			log:jk_logging.AbstractLogger = None,
+		):
+
+		if gitWrapper:
+			self.__gitWrapper = gitWrapper
+		else:
+			if log is None:
+				raise Exception("Logger must not be None!")
+			self.__gitWrapper = GitWrapper(log)
+
 		gitRootDir = GitWorkingCopy.__findRootDir(os.path.abspath(rootDir))
 		if gitRootDir:
 			self.__gitRootDir = gitRootDir
-			self.__gitCfgFile = GitConfigFile(os.path.join(gitRootDir, ".git", "config"))
+			self.__gitCfgFile = GitConfigFile.loadFromFile(os.path.join(gitRootDir, ".git", "config"))
 		else:
 			raise Exception("Can't find git root directory: " + rootDir)
 
+		# TODO: improve this - maybe just storing a value for a certain amount of time is not the best idea
 		self.__volatileValue_lsRemote = jk_utils.VolatileValue(self.__lsRemote, 15)					# 15 seconds caching time
 	#
 
 	################################################################################################################################
 	## Public Properties
 	################################################################################################################################
+
+	@property
+	def config(self) -> GitConfigFile:
+		return self.__gitCfgFile
+	#
 
 	@property
 	def isClean(self) -> bool:
@@ -55,8 +76,12 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 	#
 
 	@property
-	def remoteOrigin(self) -> str:
-		return self.__gitCfgFile.getValue("remote \"origin\"", "url")
+	def remoteOriginURL(self) -> str:
+		#return self.__gitCfgFile.getValue("remote \"origin\"", "url")
+		for section in self.__gitCfgFile.getSections("remote"):
+			if section.argument == "origin":
+				return section.getProperty("url")
+		raise Exception("No remote origin!")
 	#
 
 	@property
@@ -65,21 +90,24 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 		return s == "store"
 	#
 
+	"""
 	@property
 	def repositoryURL(self) -> str:
-		s = self.remoteOrigin
+		s = self.remoteOriginURL
 		if s and s.endswith(".git"):
 			s = s[:-4]
 		return s
 	#
+	"""
 
+	#
+	#
+	# Get a list of all remotes
 	@property
 	def remotes(self) -> typing.List[str]:
 		ret = []
-		for sectionName in self.__gitCfgFile.sectionNames:
-			m = re.match("^remote \"(.*)\"$", sectionName)
-			if m:
-				ret.append(m.group(1))
+		for section in self.__gitCfgFile.getSections("remote"):
+			ret.append(section.argument)
 		return ret
 	#
 
@@ -100,11 +128,12 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 			"rootDir",
 			"isClean",
 			"isDirty",
-			"remoteOrigin",
-			"areCredentialsStored",
-			"repositoryURL",
+			"remoteOriginURL",
 			"remotes",
+			"areCredentialsStored",
+			#"repositoryURL",
 			"headRevisionID",
+			"config",
 		]
 	#
 
@@ -123,102 +152,20 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 		return self.__gitWrapper.lsRemote_dir(self.__gitRootDir)
 	#
 
-	def __parseAny1(self, line:str):
-		m = re.match("^\s*([A-Z\?!]+)\s+(.+)$", line)
-		if m:
-			return m
-
-		return None
-	#
-
-	def __parseAny2(self, line:str):
-		ret = re.match(r"^(\?)\s+(.+)$", line)
-		if ret:
-			return ret
-
-		ret = re.match(r"^(!)\s+(.+)$", line)
-		if ret:
-			return ret
-
-		ret = re.match("""
-			^
-				(1)
-				\\s+
-				([A-Z\\.]{2})
-				\\s+
-				([A-Z\\.]{4})
-				\\s+
-				([0-9\\.]+)
-				\\s+
-				([0-9\\.]+)
-				\\s+
-				([0-9\\.]+)
-				\\s+
-				([a-zA-Z0-9]+)
-				\\s+
-				([a-zA-Z0-9]+)
-				\\s+
-				(.+)
-			$
-			""", line, re.VERBOSE)
-		if ret:
-			return ret
-
-		ret = re.match("""
-			^
-				(2)
-				\\s+
-				([A-Z\\.]{2})
-				\\s+
-				([A-Z\\.]{4})
-				\\s+
-				([0-9\\.]+)
-				\\s+
-				([0-9\\.]+)
-				\\s+
-				([0-9\\.]+)
-				\\s+
-				([0-9\\.]+)
-				\\s+
-				([a-zA-Z0-9]+)
-				\\s+
-				([A-Z][0-9]+)
-				\\s+
-				(.+)
-			$
-			""", line, re.VERBOSE)
-		if ret:
-			return ret
-
-		ret = re.match("""
-			^
-				(u)
-				\\s+
-				([A-Z\\.]{2})
-				\\s+
-				([A-Z\\.]{4})
-				\\s+
-				([0-9\\.]+)
-				\\s+
-				([0-9\\.]+)
-				\\s+
-				([0-9\\.]+)
-				\\s+
-				([0-9\\.]+)
-				\\s+
-				(.+)
-				\\s+
-				(.+)
-				\\s+
-				(.+)
-				\\s+
-				(.+)
-			$
-			""", line, re.VERBOSE)
-		if ret:
-			return ret
-
-		return None
+	@staticmethod
+	def __findRootDir(rootDir:str, bRecursive:bool = True):
+		if len(rootDir) <= 1:
+			return None
+		testDir = rootDir + "/.git"
+		if os.path.isdir(testDir):
+			return rootDir
+		pos = rootDir.rfind("/")
+		if pos <= 0:
+			return None
+		if bRecursive:
+			return GitWorkingCopy.__findRootDir(rootDir[:pos])
+		else:
+			return None
 	#
 
 	################################################################################################################################
@@ -243,89 +190,10 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 	#
 	# @return	GitFileInfo[]	A list of file information objects.
 	#
-	def status(self, bIncludeIgnored:bool = False) -> list:
+	def status(self, bIncludeIgnored:bool = False) -> typing.List[GitFileInfo]:
 		lines = self.__gitWrapper.status(self.__gitRootDir, bIncludeIgnored)
-		porcellainVersion = self.__gitWrapper.porcelainVersion()
 
-		ret = []
-		for line in lines:
-			bSuccess = False
-
-			if porcellainVersion == 1:
-				m = self.__parseAny1(line)
-			elif porcellainVersion == 2:
-				m = self.__parseAny2(line)
-			else:
-				raise Exception()
-
-			if m:
-				g = m.groups()
-
-				if porcellainVersion == 1:
-					sType = g[0][-1]
-					m = g[1:]
-					if sType == "?":
-						# untracked
-						ret.append(GitFileInfo(self, GitFileInfo.UNVERSIONED, m[0]))
-						bSuccess = True
-					elif sType == "!":
-						# ignored
-						ret.append(GitFileInfo(self, GitFileInfo.IGNORED, m[0]))
-						bSuccess = True
-					elif sType == "A":
-						# added
-						ret.append(GitFileInfo(self, GitFileInfo.ADDED, m[-1]))
-						bSuccess = True
-					elif sType == "M":
-						# modified
-						ret.append(GitFileInfo(self, GitFileInfo.MODIFIED, m[-1]))
-						bSuccess = True
-					elif sType == "R":
-						# renamed
-						ret.append(GitFileInfo(self, GitFileInfo.RENAMED, m[-1]))
-						bSuccess = True
-					elif sType == "D":
-						# renamed
-						ret.append(GitFileInfo(self, GitFileInfo.DELETED, m[-1]))
-						bSuccess = True
-					elif sType == "U":
-						# conflicted
-						ret.append(GitFileInfo(self, GitFileInfo.CONFLICTED, m[-1]))
-						bSuccess = True
-
-				elif porcellainVersion == 2:
-					sType = g[0]
-					m = g[1:]
-					if sType == "?":
-						# untracked
-						ret.append(GitFileInfo(self, GitFileInfo.UNVERSIONED, m[0]))
-						bSuccess = True
-					elif sType == "!":
-						# ignored
-						ret.append(GitFileInfo(self, GitFileInfo.IGNORED, m[0]))
-						bSuccess = True
-					elif sType == "1":
-						# modified
-						if "A" in m[0]:
-							ret.append(GitFileInfo(self, GitFileInfo.ADDED, m[-1]))
-						else:
-							ret.append(GitFileInfo(self, GitFileInfo.MODIFIED, m[-1]))
-						bSuccess = True
-					elif sType == "2":
-						# renamed
-						ret.append(GitFileInfo(self, GitFileInfo.RENAMED, m[-1]))
-						bSuccess = True
-					elif sType == "u":
-						# conflicted
-						ret.append(GitFileInfo(self, GitFileInfo.CONFLICTED, m[-1]))
-						bSuccess = True
-
-			if not bSuccess:
-				raise Exception("Failed to parse line: " + repr(line))
-
-		if not bIncludeIgnored:
-			ret = [ x for x in ret if x.status() != GitFileInfo.IGNORED ]
-		return ret
+		return _GitStatusOutputParser.parse(lines, self.__gitWrapper.porcelainVersion, bIncludeIgnored, self)
 	#
 
 	#
@@ -359,22 +227,6 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 		dirPath = os.path.abspath(dirPath)
 		gitRootDir = GitWorkingCopy.__findRootDir(dirPath, False)
 		return gitRootDir is not None
-	#
-
-	@staticmethod
-	def __findRootDir(rootDir:str, bRecursive:bool = True):
-		if len(rootDir) <= 1:
-			return None
-		testDir = rootDir + "/.git"
-		if os.path.isdir(testDir):
-			return rootDir
-		pos = rootDir.rfind("/")
-		if pos <= 0:
-			return None
-		if bRecursive:
-			return GitWorkingCopy.__findRootDir(rootDir[:pos])
-		else:
-			return None
 	#
 
 #

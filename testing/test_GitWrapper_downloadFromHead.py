@@ -2,17 +2,31 @@
 
 
 
-import jk_git
+import os
+
 import jk_json
+import jk_logging
+
+import jk_git
 
 
 
-git = jk_git.GitWrapper()
-print(git.porcelainVersion())
-s = git.downloadFromHead("..", "packageinfo.json")
-print("=" * 200)
-print(s)
-print("=" * 200)
+
+
+REPOSITORY_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
+
+with jk_logging.wrapMain() as log:
+
+	git = jk_git.GitWrapper(log)
+
+	print("porcelainVersion =", git.porcelainVersion)
+
+	s = git.downloadFromHead("..", "packageinfo.jsonc")
+	print("=" * 200)
+	print(s)
+	print("=" * 200)
 
 
 

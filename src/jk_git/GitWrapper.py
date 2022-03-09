@@ -1,89 +1,139 @@
 
 
-import re
+
 import os
 import typing
+import re
 
+import jk_typing
+import jk_logging
+import jk_prettyprintobj
 import jk_simpleexec
-import jk_utils
 import jk_version
 
-from .GitFileInfo import AbstractRepositoryFile, GitFileInfo
+from .impl.GitHelper import GitHelper
 
 
 
 
 
-def _detectGitBinary() -> typing.Union[str,None]:
-	_pathcandidates = None
-	if os.name == "nt":
-		_pathcandidates = [ "C:\\Program Files\\Git\cmd\\git.exe" ]
-	else:
-		_pathcandidates = [ "/usr/bin/git" ]
 
-	# ----
 
-	for pc in _pathcandidates:
-		if os.path.isfile(pc):
-			return pc
-
-	# ----
-
-	return None
-#
 
 
 
 
 #
-# This class wraps around the program 'git'. It's methods provide raw unprocessed output as returned by the git tool.
-# This is a global instance for mimicking a singleton pattern.
+# This class wraps around the program 'git'.
 #
-class _GitWrapper(object):
+class GitWrapper(jk_prettyprintobj.DumpMixin):
 
-	def __init__(self):
-		self.__gitBinPath = _detectGitBinary()
-		if not self.__gitBinPath:
-			raise Exception("Git seems not to be installed!")
+	__GIT_HELPER = None
 
-		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "--version" ])
-		if (r is None) or r.isError:
-			r.dump()
-			raise Exception("Running git failed!")
-		lines = r.stdOutLines
-		if lines[0].startswith("git version "):
-			v = jk_version.Version(lines[0][12:].strip())
-			self.__gitPorcelainVersion = 1 if v < jk_version.Version("2.8") else 2
-		else:
-			print(lines[0])
-			raise Exception("Failed to parse version!")
+	################################################################################################################################
+	## Constructor
+	################################################################################################################################
+
+	#
+	# Constructor method.
+	#
+	@jk_typing.checkFunctionSignature()
+	def __init__(self, log:jk_logging.AbstractLogger = None):
+		if GitWrapper.__GIT_HELPER is None:
+			GitWrapper.__GIT_HELPER = GitHelper(log)
 	#
 
+	################################################################################################################################
+	## Public Properties
+	################################################################################################################################
+
+	@property
+	def version(self) -> jk_version.Version:
+		return GitWrapper.__GIT_HELPER.version
+	#
+
+	@property
 	def porcelainVersion(self):
-		return self.__gitPorcelainVersion
+		return GitWrapper.__GIT_HELPER.porcelainVersion
 	#
 
+	@property
+	def gitBinPath(self) -> str:
+		return GitWrapper.__GIT_HELPER.gitBinPath
 	#
-	# Retrieve the status of this working copy
+
+	################################################################################################################################
+	## Helper Methods
+	################################################################################################################################
+
+	def _dumpVarNames(self):
+		return [
+			"version",
+			"gitBinPath",
+			"porcelainVersion",
+		]
+	#
+
+	################################################################################################################################
+	## Public Methods
+	################################################################################################################################
+
+	@jk_typing.checkFunctionSignature(logDescend="Executing git ...", logLevel=jk_logging.EnumLogLevel.NOTICE)
+	def git(self,
+			*args,
+			cmdArgs:typing.Union[typing.List[str],typing.Tuple[str]],
+			workingDirectory:str = None,
+			log:jk_logging.AbstractLogger = None,
+			**kwargs,
+		) -> jk_simpleexec.CommandResult:
+
+		assert not args
+		assert not kwargs
+
+		# ---
+
+		return GitWrapper.__GIT_HELPER.runGitWD(
+			workingDirectory,
+			cmdArgs,
+			log,
+		)
+	#
+
+	################################################################################################################################
+	## Public High Level Methods
+	################################################################################################################################
+
+	#
+	# Retrieve the status of a working copy
 	#
 	# @return	str[]		Text output of the 'status' command
 	#
-	def status(self, gitRootDir:str, bIncludeIgnored:bool = False) -> list:
-		if self.__gitPorcelainVersion == 1:
+	@jk_typing.checkFunctionSignature()
+	def status(self, gitRootDir:str, bIncludeIgnored:bool = False, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
+		if GitWrapper.__GIT_HELPER.porcelainVersion == 1:
+
 			if bIncludeIgnored:
-				r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "status", "--porcelain", "-uall", "--ignored" ])
+				_cmdArgs = [ "-C", ".", "status", "--porcelain", "-uall", "--ignored" ]
 			else:
-				r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "status", "--porcelain", "-uall" ])
-		elif self.__gitPorcelainVersion == 2:
+				_cmdArgs = [ "-C", ".", "status", "--porcelain", "-uall" ]
+
+			r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, _cmdArgs, log)
+
+		elif GitWrapper.__GIT_HELPER.porcelainVersion == 2:
+
 			if bIncludeIgnored:
-				#r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored=traditional" ])
-				r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored" ])
+				#	_cmdArgs = [ "-C", gitRootDir, "status", "--porcelain=2", "-uall", "--ignored=traditional" ],
+				_cmdArgs = [ "-C", ".", "status", "--porcelain=2", "-uall", "--ignored" ]
 			else:
-				r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "status", "--porcelain=2", "-uall" ])
+				_cmdArgs = [ "-C", ".", "status", "--porcelain=2", "-uall" ]
+
+			r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, _cmdArgs, log)
+
 		else:
 			raise Exception()
 		if (r is None) or r.isError:
-			r.dump()
+			if log:
+				r.dump(printFunc=log.warn)
 			raise Exception("Running git failed!")
 		if r.stdOutLines:
 			return r.stdOutLines
@@ -91,10 +141,12 @@ class _GitWrapper(object):
 			return []
 	#
 
-	def lsRemote_url(self, url:str) -> list:
-		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "ls-remote", url ])
+	@jk_typing.checkFunctionSignature()
+	def lsRemote_url(self, url:str, log:jk_logging.AbstractLogger = None) -> list:
+		r = GitWrapper.__GIT_HELPER.runGitNoWD(None, [ "ls-remote", url ], log)
 		if (r is None) or r.isError:
-			r.dump()
+			if log:
+				r.dump(printFunc=log.warn)
 			raise Exception("Running git failed!")
 		ret = []
 		for line in r.stdOutLines:
@@ -104,10 +156,12 @@ class _GitWrapper(object):
 		return ret
 	#
 
-	def lsRemote_dir(self, gitRootDir:str) -> list:
-		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "ls-remote" ])
+	@jk_typing.checkFunctionSignature()
+	def lsRemote_dir(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> list:
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "ls-remote" ], log)
 		if (r is None) or (r.returnCode != 0):
-			r.dump()
+			if log:
+				r.dump(printFunc=log.warn)
 			raise Exception("Running git failed!")
 		ret = []
 		for line in r.stdOutLines:
@@ -122,7 +176,8 @@ class _GitWrapper(object):
 	#
 	# @return	str[]		Text output of the 'add' command
 	#
-	def add(self, gitRootDir:str, filePath:str) -> list:
+	@jk_typing.checkFunctionSignature()
+	def add(self, gitRootDir:str, filePath:str, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
 		assert os.path.isabs(filePath)
 
 		s = gitRootDir
@@ -131,9 +186,10 @@ class _GitWrapper(object):
 		if not filePath.startswith(s):
 			raise Exception("File does not seem to be part of the git tree: " + filePath)
 
-		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "add", filePath ])
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "add", filePath ], log)
 		if (r is None) or r.isError:
-			r.dump()
+			if log:
+				r.dump(printFunc=log.warn)
 			raise Exception("Running git failed!")
 		if r.stdOutLines:
 			return r.stdOutLines
@@ -141,10 +197,11 @@ class _GitWrapper(object):
 			return []
 	#
 
-	def pull(self, gitRootDir:str) -> list:
+	@jk_typing.checkFunctionSignature()
+	def pull(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
 		assert os.path.isdir(gitRootDir)
 
-		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "pull" ])
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "pull" ], log)
 
 		# STDOUT: 'Updating 293bc22..81ad022'
 		# STDOUT: 'Fast-forward'
@@ -155,7 +212,8 @@ class _GitWrapper(object):
 		# RETURNCODE: 0
 
 		if (r is None) or (r.returnCode != 0):
-			r.dump()
+			if log:
+				r.dump(printFunc=log.warn)
 			raise Exception("Running git failed!")
 
 		ret = []
@@ -166,7 +224,8 @@ class _GitWrapper(object):
 		return ret
 	#
 
-	def clone(self, gitRootDir:str, url:str) -> list:
+	@jk_typing.checkFunctionSignature()
+	def clone(self, gitRootDir:str, url:str, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
 		assert os.path.isdir(gitRootDir)
 		assert isinstance(url, str)
 		assert url
@@ -175,9 +234,10 @@ class _GitWrapper(object):
 		for something in os.listdir(gitRootDir):
 			raise Exception("Target directory is not empty: " + gitRootDir)
 
-		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "clone", url, "." ], workingDirectory=gitRootDir)
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "clone", url, "." ], log)
 		if (r is None) or (r.returnCode != 0):
-			r.dump()
+			if log:
+				r.dump(printFunc=log.warn)
 			raise Exception("Running git failed!")
 		if r.stdErrLines:
 			return r.stdErrLines
@@ -190,15 +250,17 @@ class _GitWrapper(object):
 	#
 	# @return	str[]		Text output of the 'log' command
 	#
-	def logPretty(self, gitRootDir:str) -> list:
-		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "log", "--pretty=format:\"%P|%H|%cn|%ce|%cd|%s\"" ])
+	@jk_typing.checkFunctionSignature()
+	def logPretty(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "log", "--pretty=format:\"%P|%H|%cn|%ce|%cd|%s\"" ], log)
 		if (r is None) or r.isError:
 			if r.stdErrLines \
 				and (r.stdErrLines[0].find("fatal: your current branch") >= 0) \
 				and (r.stdErrLines[0].find("does not have any commits yet") >= 0):
 				return []
 			else:
-				r.dump()
+				if log:
+					r.dump(printFunc=log.warn)
 				raise Exception("Running git failed!")
 		if r.stdOutLines:
 			ret = []
@@ -216,13 +278,15 @@ class _GitWrapper(object):
 	#
 	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
 	#
-	def downloadFromHead(self, gitRootDir:str, filePath:str) -> str:
-		r = jk_simpleexec.invokeCmd(self.__gitBinPath, [ "-C", gitRootDir, "show", "HEAD:" + filePath ])
+	@jk_typing.checkFunctionSignature()
+	def downloadFromHead(self, gitRootDir:str, filePath:str, log:jk_logging.AbstractLogger = None) -> str:
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "show", "HEAD:" + filePath ], log, bRaiseExceptionOnError=False)
 		if (r is None) or r.isError:
 			if (r.returnCode == 128) and r.stdErrLines and r.stdErrLines[0].startswith("fatal:"):
 				if ("does not exist" in r.stdErrLines[0]) or ("but not in 'HEAD'" in r.stdErrLines[0]):
 					return None
-			r.dump()
+			if log:
+				r.dump(printFunc=log.warn)
 			raise Exception("Running git failed!")
 		if r.stdOutLines:
 			return "\n".join(r.stdOutLines)
@@ -230,95 +294,95 @@ class _GitWrapper(object):
 			return ""
 	#
 
+	@jk_typing.checkFunctionSignature()
+	def init(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> None:
+		GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "init" ], log)
+	#
+
+	#
+	# Run 'git flow init' with using all default settings.
+	#
+	@jk_typing.checkFunctionSignature()
+	def flowInit(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> None:
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "flow", "init", "-d" ], log, bRaiseExceptionOnError=False)
+		if "'flow' is not a git command" in r.stdErrStr:
+			raise Exception("git-flow is not installed!")
+		if r.isErrorRC:
+			if log:
+				r.dump(printFunc=log.warn)
+			raise Exception("Running git failed!")
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def commit(self, gitRootDir:str, commitMsg:str, log:jk_logging.AbstractLogger = None) -> None:
+		assert commitMsg
+
+		GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "commit", "-m", commitMsg ], log)
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def listTags(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "tag", "--list" ], log)
+		return r.stdOutLines
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def createTag(self, gitRootDir:str, tagName:str, commitMsg:str, log:jk_logging.AbstractLogger = None) -> None:
+		assert tagName
+		assert commitMsg
+
+		GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "tag", "-a", tagName, "-m", commitMsg ], log)
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def deleteTag(self, gitRootDir:str, tagName:str, log:jk_logging.AbstractLogger = None) -> None:
+		assert tagName
+
+		GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "tag", "-d", tagName ], log)
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def listBranches(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "branch", "--all" ], log)
+		if r.isError:
+			if log:
+				r.dump(printFunc=log.warn)
+			raise Exception("Running git failed!")
+		return r.stdOutLines
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def createBranch(self, gitRootDir:str, branchName:str, log:jk_logging.AbstractLogger = None) -> None:
+		assert branchName
+
+		GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "checkout", "-b", branchName ], log)
+		# NOTE: STDERR is something like "Switched to a new branch '....'"
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def switchToBranch(self, gitRootDir:str, branchName:str, log:jk_logging.AbstractLogger = None) -> None:
+		assert branchName
+
+		GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "checkout", branchName ], log)
+		# NOTE: STDERR is something like "Switched to a branch '....'"
+	#
+
+	#@jk_typing.checkFunctionSignature()
+	#def describeAll(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
+	#	r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "describe", "--tags", "--all" ], log)
+	#	r.dump()
+	#	return r.stdOutLines
+	##
+
+	@jk_typing.checkFunctionSignature()
+	def showLog(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "log", "--source" ], log)
+		return r.stdOutLines
+	#
+
 #
 
 
-
-
-
-
-
-_GIT_WRAPPER_INST = None
-
-
-
-
-
-
-
-#
-# This class wraps around _GitWrapper.
-# This is a lightweight class.
-#
-# TODO: Implement a better solution.
-#
-class GitWrapper(object):
-
-	def __init__(self):
-		global _GIT_WRAPPER_INST
-
-		if _GIT_WRAPPER_INST is None:
-			_GIT_WRAPPER_INST = _GitWrapper()
-
-		self.porcelainVersion = _GIT_WRAPPER_INST.porcelainVersion
-		self.status = _GIT_WRAPPER_INST.status
-		self.downloadFromHead = _GIT_WRAPPER_INST.downloadFromHead
-		self.add = _GIT_WRAPPER_INST.add
-		self.logPretty = _GIT_WRAPPER_INST.logPretty
-		self.lsRemote_url = _GIT_WRAPPER_INST.lsRemote_url
-		self.lsRemote_dir = _GIT_WRAPPER_INST.lsRemote_dir
-		self.clone = _GIT_WRAPPER_INST.clone
-		self.pull = _GIT_WRAPPER_INST.pull
-	#
-
-	def pull(self, gitRootDir:str) -> list:
-		raise Exception()
-	#
-
-	def clone(self, gitRootDir:str, url:str) -> list:
-		raise Exception()
-	#
-
-	def lsRemote_url(self, url:str) -> list:
-		raise Exception()
-	#
-
-	def porcelainVersion(self):
-		raise Exception()
-	#
-
-	#
-	# Retrieve the status of this working copy
-	#
-	# @return	str[]		Text output of the 'status' command
-	#
-	def status(self, gitRootDir:str, bIncludeIgnored:bool = False) -> list:
-		raise Exception()
-	#
-
-	def logPretty(self, gitRootDir:str) -> list:
-		raise Exception()
-	#
-
-	#
-	# Download a single file from the HEAD revision.
-	#
-	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
-	#
-	def downloadFromHead(self, gitRootDir:str, filePath:str) -> list:
-		raise Exception()
-	#
-
-	#
-	# Add a file to the git repository.
-	#
-	# @return	str[]		Text output of the 'add' command
-	#
-	def add(self, gitRootDir:str, filePath:str) -> list:
-		raise Exception()
-	#
-
-#
 
 
 

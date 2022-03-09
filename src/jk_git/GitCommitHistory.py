@@ -106,6 +106,11 @@ class GitCommitHistory(jk_prettyprintobj.DumpMixin):
 		if not stdLines:
 			return None
 
+		return GitCommitHistory.createFromGitLogOutput(stdLines)
+	#
+
+	@staticmethod
+	def createFromGitLogOutput(stdLines:str):
 		entriesList = []
 		for line in stdLines:
 			parts = [

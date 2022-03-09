@@ -7,3 +7,4 @@ testing/testdata/*
 .vscode
 examples/*.log
 testing.priv/
+**/*OLD*

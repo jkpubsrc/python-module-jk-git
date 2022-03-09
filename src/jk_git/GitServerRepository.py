@@ -3,7 +3,7 @@
 import re
 import os
 
-import jk_simpleexec
+import jk_logging
 import jk_utils
 import jk_prettyprintobj
 
@@ -23,8 +23,8 @@ class GitServerRepository(jk_prettyprintobj.DumpMixin):
 	## Constructors
 	################################################################################################################################
 
-	def __init__(self, rootDir:str):
-		self.__gitWrapper = GitWrapper()
+	def __init__(self, rootDir:str, log:jk_logging.AbstractLogger):
+		self.__gitWrapper = GitWrapper(log)
 		bIsGitRoot = GitServerRepository.__isRootDir(os.path.abspath(rootDir))
 		if bIsGitRoot:
 			self.__gitRootDir = rootDir

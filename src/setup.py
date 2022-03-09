@@ -40,8 +40,10 @@ setup(
 	name = "jk_git",
 	packages = [
 		"jk_git",
+		"jk_git.impl",
+		"jk_git.workingcopy",
 	],
-	version = "0.2022.1.6",
+	version = "0.2022.3.9",
 	zip_safe = False,
 	long_description = readme(),
 	long_description_content_type="text/markdown",
