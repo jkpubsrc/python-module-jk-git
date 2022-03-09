@@ -1,11 +1,10 @@
 
 
-from ast import arguments
 import typing
 import re
 import os
 
-import jk_simpleexec
+import jk_typing
 import jk_prettyprintobj
 import jk_utils
 import jk_logging
@@ -175,14 +174,21 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 	#
 	# Run a <c>git pull</c> request.
 	#
-	def update(self):
-		self.__gitWrapper.pull(self.__gitRootDir)
+	@jk_typing.checkFunctionSignature()
+	def pull(self, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
+		return self.__gitWrapper.pull(self.__gitRootDir, log)
 	#
 
-	def addFile(self, filePath:str):
-		lines = self.__gitWrapper.add(self.__gitRootDir, filePath)
+	@jk_typing.checkFunctionSignature()
+	def addFile(self, filePath:str, log:jk_logging.AbstractLogger = None):
+		lines = self.__gitWrapper.add(self.__gitRootDir, filePath, log)
 		if lines:
 			raise Exception("Unexpected output received: " + repr(lines))
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def flowInit(self, log:jk_logging.AbstractLogger = None) -> None:
+		self.__gitWrapper.flowInit(self.__gitRootDir, log)
 	#
 
 	#
@@ -190,9 +196,9 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 	#
 	# @return	GitFileInfo[]	A list of file information objects.
 	#
-	def status(self, bIncludeIgnored:bool = False) -> typing.List[GitFileInfo]:
-		lines = self.__gitWrapper.status(self.__gitRootDir, bIncludeIgnored)
-
+	@jk_typing.checkFunctionSignature()
+	def status(self, bIncludeIgnored:bool = False, log:jk_logging.AbstractLogger = None) -> typing.List[GitFileInfo]:
+		lines = self.__gitWrapper.status(self.__gitRootDir, bIncludeIgnored, log)
 		return _GitStatusOutputParser.parse(lines, self.__gitWrapper.porcelainVersion, bIncludeIgnored, self)
 	#
 
@@ -201,8 +207,9 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 	#
 	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
 	#
-	def downloadFromHead(self, filePath:str) -> str:
-		return self.__gitWrapper.downloadFromHead(self.__gitRootDir, filePath)
+	@jk_typing.checkFunctionSignature()
+	def downloadFromHead(self, filePath:str, log:jk_logging.AbstractLogger = None) -> str:
+		return self.__gitWrapper.downloadFromHead(self.__gitRootDir, filePath, log)
 	#
 
 	#
@@ -210,6 +217,41 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 	#
 	def getCommitHistory(self) -> GitCommitHistory:
 		return GitCommitHistory.create(self.__gitRootDir, self.__gitWrapper)
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def commit(self, commitMsg:str, log:jk_logging.AbstractLogger = None) -> None:
+		self.__gitWrapper.commit(self.__gitRootDir, commitMsg, log)
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def listTags(self, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
+		return self.__gitWrapper.listTags(self.__gitRootDir, log)
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def createTag(self, tagName:str, commitMsg:str, log:jk_logging.AbstractLogger = None) -> None:
+		self.__gitWrapper.createTag(self.__gitRootDir, tagName, commitMsg, log)
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def deleteTag(self, tagName:str, log:jk_logging.AbstractLogger = None) -> None:
+		self.__gitWrapper.deleteTag(self.__gitRootDir, tagName, log)
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def listBranches(self, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
+		return self.__gitWrapper.listBranches(self.__gitRootDir, log)
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def createBranch(self, branchName:str, log:jk_logging.AbstractLogger = None):
+		self.__gitWrapper.createBranch(self.__gitRootDir, branchName, log)
+	#
+
+	@jk_typing.checkFunctionSignature()
+	def switchToBranch(self, branchName:str, log:jk_logging.AbstractLogger = None):
+		self.__gitWrapper.switchToBranch(self.__gitRootDir, branchName, log)
 	#
 
 	################################################################################################################################

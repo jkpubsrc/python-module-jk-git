@@ -79,10 +79,11 @@ class GitWrapper(jk_prettyprintobj.DumpMixin):
 	################################################################################################################################
 
 	@jk_typing.checkFunctionSignature(logDescend="Executing git ...", logLevel=jk_logging.EnumLogLevel.NOTICE)
-	def git(self,
+	def runGit(self,
 			*args,
 			cmdArgs:typing.Union[typing.List[str],typing.Tuple[str]],
 			workingDirectory:str = None,
+			bRaiseExceptionOnError:bool = True,
 			log:jk_logging.AbstractLogger = None,
 			**kwargs,
 		) -> jk_simpleexec.CommandResult:
@@ -96,6 +97,7 @@ class GitWrapper(jk_prettyprintobj.DumpMixin):
 			workingDirectory,
 			cmdArgs,
 			log,
+			bRaiseExceptionOnError=bRaiseExceptionOnError,
 		)
 	#
 
@@ -246,34 +248,6 @@ class GitWrapper(jk_prettyprintobj.DumpMixin):
 	#
 
 	#
-	# Show the log
-	#
-	# @return	str[]		Text output of the 'log' command
-	#
-	@jk_typing.checkFunctionSignature()
-	def logPretty(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
-		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "log", "--pretty=format:\"%P|%H|%cn|%ce|%cd|%s\"" ], log)
-		if (r is None) or r.isError:
-			if r.stdErrLines \
-				and (r.stdErrLines[0].find("fatal: your current branch") >= 0) \
-				and (r.stdErrLines[0].find("does not have any commits yet") >= 0):
-				return []
-			else:
-				if log:
-					r.dump(printFunc=log.warn)
-				raise Exception("Running git failed!")
-		if r.stdOutLines:
-			ret = []
-			for line in r.stdOutLines:
-				assert line[0] == "\""
-				assert line[-1] == "\""
-				ret.append(line[1:-1])
-			return ret
-		else:
-			return []
-	#
-
-	#
 	# Download a single file from the HEAD revision.
 	#
 	# @return		str			Either returns the file content if the file exists or `None` if the file does not exist.
@@ -376,8 +350,42 @@ class GitWrapper(jk_prettyprintobj.DumpMixin):
 
 	@jk_typing.checkFunctionSignature()
 	def showLog(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
-		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "log", "--source" ], log)
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "log" ], log)
 		return r.stdOutLines
+	#
+
+	#
+	# Show the log
+	#
+	# @return	str[]		Text output of the 'log' command
+	#
+	@jk_typing.checkFunctionSignature()
+	def showLogParsable(self, gitRootDir:str, log:jk_logging.AbstractLogger = None) -> typing.List[str]:
+		# %P	parent hashes
+		# %H	commit hash
+		# %cn	committer name
+		# %ce	committer email
+		# %cd	committer date
+		# %s	subject (= commit message)
+		r = GitWrapper.__GIT_HELPER.runGitWD(gitRootDir, [ "-C", ".", "log", "--pretty=format:\"%P|%H|%cn|%ce|%cd|%s\"" ], log)
+		if (r is None) or r.isError:
+			if r.stdErrLines \
+				and (r.stdErrLines[0].find("fatal: your current branch") >= 0) \
+				and (r.stdErrLines[0].find("does not have any commits yet") >= 0):
+				return []
+			else:
+				if log:
+					r.dump(printFunc=log.warn)
+				raise Exception("Running git failed!")
+		if r.stdOutLines:
+			ret = []
+			for line in r.stdOutLines:
+				assert line[0] == "\""
+				assert line[-1] == "\""
+				ret.append(line[1:-1])
+			return ret
+		else:
+			return []
 	#
 
 #

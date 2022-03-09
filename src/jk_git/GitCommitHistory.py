@@ -102,7 +102,7 @@ class GitCommitHistory(jk_prettyprintobj.DumpMixin):
 	#
 	@staticmethod
 	def create(rootDir:str, wrapper:GitWrapper):
-		stdLines = wrapper.logPretty(rootDir)
+		stdLines = wrapper.showLogParsable(rootDir)
 		if not stdLines:
 			return None
 
