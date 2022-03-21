@@ -75,12 +75,12 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 	#
 
 	@property
-	def remoteOriginURL(self) -> str:
+	def remoteOriginURL(self) -> typing.Union[str,None]:
 		#return self.__gitCfgFile.getValue("remote \"origin\"", "url")
 		for section in self.__gitCfgFile.getSections("remote"):
 			if section.argument == "origin":
 				return section.getProperty("url")
-		raise Exception("No remote origin!")
+		return None
 	#
 
 	@property
@@ -111,11 +111,11 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 	#
 
 	@property
-	def headRevisionID(self) -> str:
+	def headRevisionID(self) -> typing.Union[str,None]:
 		for revID, revName in self.__volatileValue_lsRemote.value:
 			if revName == "HEAD":
 				return revID
-		raise Exception("Head revision not found!")
+		return None
 	#
 
 	################################################################################################################################
@@ -147,7 +147,9 @@ class GitWorkingCopy(jk_prettyprintobj.DumpMixin):
 	# 	[	"293bc22fa252a86039060986460275df3f5f0331",	"refs/heads/master"	]
 	# ]
 	#
-	def __lsRemote(self):
+	def __lsRemote(self) -> list:
+		if not self.remoteOriginURL:
+			return []
 		return self.__gitWrapper.lsRemote_dir(self.__gitRootDir)
 	#
 
