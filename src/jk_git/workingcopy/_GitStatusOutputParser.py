@@ -5,8 +5,6 @@ import re
 import os
 import typing
 
-import jk_typing
-
 from ..GitFileInfo import GitFileInfo
 
 

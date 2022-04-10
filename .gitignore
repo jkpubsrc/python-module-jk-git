@@ -8,3 +8,4 @@ testing/testdata/*
 examples/*.log
 testing.priv/
 **/*OLD*
+*.bak

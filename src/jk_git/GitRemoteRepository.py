@@ -5,7 +5,6 @@ import re
 import os
 
 import jk_utils
-import jk_simpleexec
 import jk_prettyprintobj
 
 from .GitWrapper import GitWrapper

@@ -32,19 +32,27 @@ setup(
 		"jk_typing",
 		"jk_utils",
 		"jk_prettyprintobj",
+		"jk_logging",
+		"jk_version",
 	],
 	keywords = [
 		"git",
 	],
 	license = "Apache2",
 	name = "jk_git",
+	package_data = {
+		"": [
+		],
+	},
 	packages = [
 		"jk_git",
 		"jk_git.impl",
 		"jk_git.workingcopy",
 	],
-	version = "0.2022.3.9",
+	scripts = [
+	],
+	version = '0.2022.4.10',
 	zip_safe = False,
 	long_description = readme(),
-	long_description_content_type="text/markdown",
+	long_description_content_type = "text/markdown",
 )

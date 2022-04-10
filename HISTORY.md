@@ -5,3 +5,6 @@
 	* Refactoring
 	* Improved: Parsing of git configuration
 	* Added: Variety of new API methods
+
+* 2022-04-10
+	* Fixed: imports

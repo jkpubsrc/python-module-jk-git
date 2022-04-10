@@ -8,7 +8,6 @@ import jk_typing
 import jk_version
 import jk_logging
 import jk_simpleexec
-import jk_prettyprintobj
 
 
 
