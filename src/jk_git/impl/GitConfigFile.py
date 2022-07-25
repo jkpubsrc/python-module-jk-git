@@ -26,7 +26,7 @@ class GitConfigFile(jk_prettyprintobj.DumpMixin):
 	@jk_typing.checkFunctionSignature()
 	def __init__(self, filePath:str):
 		self.__filePath = filePath
-		self.__sections = []
+		self.__sections:typing.List[GitConfigFileSection] = []
 	#
 
 	################################################################################################################################
@@ -72,11 +72,11 @@ class GitConfigFile(jk_prettyprintobj.DumpMixin):
 	#
 
 	def __len__(self):
-		return self.__len__()
+		return len(self.__sections)
 	#
 
 	def __bool__(self):
-		return self.__bool__()
+		return bool(self.__sections)
 	#
 
 	@jk_typing.checkFunctionSignature()
@@ -86,7 +86,7 @@ class GitConfigFile(jk_prettyprintobj.DumpMixin):
 			if sect.name == sectionName:
 				ret.append(sect)
 		return ret
-	#				
+	#
 
 	@jk_typing.checkFunctionSignature()
 	def getValue(self, sectionName:str, propertyKey:str) -> typing.Union[str,None]:
@@ -97,11 +97,42 @@ class GitConfigFile(jk_prettyprintobj.DumpMixin):
 			return None
 	#
 
+	#
+	# This method replaces <c>getValue()</c>.
+	#
+	# @param	str sectionName			(required) The name of the section to retrieve
+	# @param	str argument			(optional) Additional search condition: The name of the section argument.
+	#									Using <c>null</c> by default to indicate 'no section argument'.
+	# @param	str propertyKey			(required) The name of the section property to retrieve
+	# @return							The requested value if a) the section and b) the value requested was found. <c>null</c> otherwise.
+	#
 	@jk_typing.checkFunctionSignature()
-	def getSection(self, sectionName:str) -> typing.Union[GitConfigFileSection,None]:
-		for sect in self.__sections:
-			if sect.name == sectionName:
-				return sect
+	def getValue2(self, sectionName:str, argument:typing.Union[str,None], propertyKey:str) -> typing.Union[str,None]:
+		section = self.getSection(sectionName, argument)
+		if section:
+			return section.getProperty(propertyKey)
+		else:
+			return None
+	#
+
+	#
+	# Get a specific setion.
+	#
+	# @param	str sectionName			(required) The name of the section to retrieve
+	# @param	str argument			(optional) Additional search condition: The name of the section argument.
+	#									Using <c>null</c> by default to indicate 'no section argument'.
+	# @return							The git configuration section object if the section was found. <c>null</c> otherwise.
+	#
+	@jk_typing.checkFunctionSignature()
+	def getSection(self, sectionName:str, argument:str = None) -> typing.Union[GitConfigFileSection,None]:
+		if argument:
+			for sect in self.__sections:
+				if (sect.name == sectionName) and (sect.argument == argument):
+					return sect
+		else:
+			for sect in self.__sections:
+				if sect.name == sectionName:
+					return sect
 		return None
 	#
 

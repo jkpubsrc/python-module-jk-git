@@ -8,3 +8,8 @@
 
 * 2022-04-10
 	* Fixed: imports
+
+* 2022-07-24
+	* Improved: GitConfigFile methods
+	* Added: Documentation
+

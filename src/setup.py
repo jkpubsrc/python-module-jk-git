@@ -24,7 +24,7 @@ setup(
 		"Programming Language :: Python :: 3",
 	],
 	description = "This python module is a wrapper around git (= the git binary file). It is ment as a simple interface to basic git functionality.",
-	include_package_data = False,
+	include_package_data = True,
 	install_requires = [
 		"python-dateutil",
 		"jk_simpleexec",
@@ -51,7 +51,7 @@ setup(
 	],
 	scripts = [
 	],
-	version = '0.2022.4.10',
+	version = '0.2022.7.24',
 	zip_safe = False,
 	long_description = readme(),
 	long_description_content_type = "text/markdown",

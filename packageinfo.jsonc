@@ -19,7 +19,7 @@
 		"license": "Apache2",
 		"name": "jk_git",
 		"packageClass": "python-module",
-		"version": "0.2022.4.10"
+		"version": "0.2022.7.25"
 	},
 	"requirements": {
 		"htmlcssjs_packages": [],
