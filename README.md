@@ -8,7 +8,7 @@ This python module is a wrapper around git (= the git binary file). It is ment a
 
 Information about this module can be found here:
 
-* [github.org](https://github.com/jkpubsrc/....)
+* [github.com](https://github.com/jkpubsrc/python-module-jk-git)
 * [pypi.python.org](https://pypi.python.org/pypi/jk_git)
 
 Why this module?
